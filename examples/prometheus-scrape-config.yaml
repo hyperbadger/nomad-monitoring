@@ -1,0 +1,31 @@
+global:
+  scrape_interval: 30s
+  scrape_timeout: 10s
+  evaluation_interval: 30s
+  external_labels:
+    orchestrator: nomad
+scrape_configs:
+  - job_name: nomad-clusters
+    static_config:
+      - targets: ['192.168.x.x:4646']
+        labels:
+          cluster: 'nomad'
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: nomad_nomad_job_summary_(unknown|queued|starting|running|failed|complete|lost)
+        replacement: "$1"
+        target_label: state
+      - source_labels: [__name__]
+        regex: nomad_nomad_job_summary_(unknown|queued|starting|running|failed|complete|lost)
+        replacement: nomad_nomad_job_summary
+        target_label: __name__
+    scheme: https
+    metrics_path: /v1/metrics
+    params:
+      format: [prometheus]
+    # required when using scheme as https; set the appropriate TLS config
+    tls_config:
+      server_name: server.dev.nomad
+      ca_file: /etc/prometheus/secrets/dev-monitoring-nomad-tls/ca.crt
+      cert_file: /etc/prometheus/secrets/dev-monitoring-nomad-tls/tls.crt
+      key_file: /etc/prometheus/secrets/dev-monitoring-nomad-tls/tls.key
